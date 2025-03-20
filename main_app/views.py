@@ -1,15 +1,16 @@
 import json
 
+from django.core.serializers import serialize
 from django.http import HttpResponse, HttpRequest
 from django.shortcuts import render, redirect
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
 from .models import Book
-from .serializers import BookSerializer, HWDataSerializer
+from .serializers import BookSerializer, HWDataSerializer, PizzaSerializer
 from rest_framework import viewsets
 from rest_framework.response import Response
-
+from .models import Pizza
 
 class BookViewSet(viewsets.ModelViewSet):
     queryset = Book.objects.all()
@@ -34,7 +35,7 @@ class BookCustomViewSet(viewsets.ViewSet):
             return Response({"error": "Book not found!"}, status=status.HTTP_404_NOT_FOUND)
 
     def create(self, request):
-        # HTTP POST localhost:8000/custom_books/
+
         serializer = BookSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -49,6 +50,38 @@ class BookCustomViewSet(viewsets.ViewSet):
             return Response({"message": "book deleted successfully!"}, status=status.HTTP_200_OK)
         except Book.DoesNotExist:
             return Response({"error": "Book not found!"}, status=status.HTTP_404_NOT_FOUND)
+
+class PizzaCustomViewSet(viewsets.ViewSet):
+    def list(self, request):
+        pizza = Pizza,objects.all()
+        serializer = PizzaSerializer(pizza, many=True)
+        return Response(serializer.data)
+
+    def retrieve(self, request, pk):
+        try:
+            pizza = Pizza.object.get(pk=pk)
+            serializer = PizzaSerializer(pizza)
+            return Response(serializer.data)
+        except Pizza.DoesNotExist:
+            return Response({"error": "Pizza not found!"}, status=status.HTTP_404_NOT_FOUND)
+
+    def create(self, request):
+        # HTTP POST localhost:8000/custom_pizza/
+        serializer = PizzaSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def destroy(self, request, pk):
+        try:
+            pizza = Pizza.objects.get(pk=pk)
+            pizza.delete()
+            return Response({"message": "Pizza deleted successfully!"}, status=status.HTTP_200_OK)
+        except Pizza.DoesNotExist:
+            return Response({"error": "Pizza not found!"}, status=status.HTTP_404_NOT_FOUND)
+
 
 
 class ActionViewSet(viewsets.ViewSet):
